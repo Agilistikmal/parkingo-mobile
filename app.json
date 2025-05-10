@@ -1,29 +1,36 @@
 {
   "expo": {
-    "name": "parkingo-mobile",
-    "slug": "parkingo-mobile",
+    "name": "Parkingo",
+    "slug": "parkingo",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/icons/adaptive-icon.png",
     "scheme": "parkingomobile",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/splash-icon.png",
+      "image": "./assets/icons/splash-icon-light.png",
       "resizeMode": "contain",
-      "backgroundColor": "#181818"
+      "backgroundColor": "#FFBF00",
+      "dark": {
+        "image": "./assets/icons/splash-icon-dark.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#181818"
+      }
     },
-    "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "icon": "./assets/icons/adaptive-icon.png"
     },
     "android": {
+      "package": "zip.agil.parkingo",
+      "versionCode": 1,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#181818"
+        "foregroundImage": "./assets/icons/adaptive-icon.png",
+        "backgroundColor": "#FFBF00"
       },
       "edgeToEdgeEnabled": true,
-      "navigationBarColor": "#FFBF00",
-      "softwareNavigationBarColor": "#FFBF00",
+      "navigationBarColor": "#000000",
+      "softwareNavigationBarColor": "#000000",
       "statusBar": {
         "backgroundColor": "#000000",
         "barStyle": "light-content"
@@ -32,11 +39,17 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/icons/adaptive-icon.png"
     },
     "plugins": ["expo-router"],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "83d08e16-1631-4d5d-9b0e-8d2842e18e2c"
+      }
     }
   }
 }

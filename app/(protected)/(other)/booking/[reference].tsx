@@ -6,9 +6,12 @@ import {
   Alert,
   Dimensions,
   Modal,
+  Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
+  ToastAndroid,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -27,6 +30,7 @@ export default function BookingDetails() {
   const { token } = useAuth();
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [showWebView, setShowWebView] = useState(false);
   const webViewRef = useRef<WebView>(null);
   const [timeLeft, setTimeLeft] = useState<{
@@ -104,12 +108,23 @@ export default function BookingDetails() {
         const now = new Date().getTime();
         setIsExpired(now > expiryTime);
       }
+
+      // Show toast when refreshing
+      if (refreshing) {
+        showToast("Data updated");
+      }
     } catch (error) {
       console.error("Error fetching booking details:", error);
       Alert.alert("Error", "Failed to load booking details");
     } finally {
       setLoading(false);
+      setRefreshing(false); // End refreshing state
     }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchBookingDetails();
   };
 
   const formatDate = (dateString: string) => {
@@ -141,11 +156,23 @@ export default function BookingDetails() {
   const closeWebView = () => {
     setShowWebView(false);
     // Refresh booking details after payment attempt
-    fetchBookingDetails();
+    setTimeout(() => {
+      fetchBookingDetails();
+    }, 1500); // Delay refresh to allow time for payment to be processed
   };
 
   const formatTimeDigit = (digit: number) => {
     return digit < 10 ? `0${digit}` : digit;
+  };
+
+  // Show toast notification
+  const showToast = (message: string) => {
+    if (Platform.OS === "android") {
+      ToastAndroid.show(message, ToastAndroid.SHORT);
+    } else {
+      // For iOS - we could use a custom alert here, but we'll keep it simple
+      console.log(message);
+    }
   };
 
   return (
@@ -160,7 +187,10 @@ export default function BookingDetails() {
       <SafeAreaView edges={["top"]} className="bg-black">
         <View className="flex-row items-center px-4 py-3">
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => {
+              // Navigate directly to the bookings tab
+              router.replace("/bookings");
+            }}
             className="w-10 h-10 bg-white/10 rounded-full items-center justify-center mr-3"
           >
             <MaterialCommunityIcons name="arrow-left" size={22} color="#fff" />
@@ -171,12 +201,23 @@ export default function BookingDetails() {
         </View>
       </SafeAreaView>
 
-      {loading ? (
+      {loading && !refreshing ? (
         <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" color={COLORS.brand} />
         </View>
       ) : booking ? (
-        <ScrollView className="flex-1 px-4">
+        <ScrollView
+          className="flex-1 px-4"
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[COLORS.brand]}
+              tintColor={COLORS.brand}
+              progressBackgroundColor="#333"
+            />
+          }
+        >
           {/* Payment Status */}
           <View
             className={`rounded-xl p-3 mb-4 ${
@@ -186,6 +227,8 @@ export default function BookingDetails() {
                 ? "bg-red-900/30"
                 : booking.status === "EXPIRED"
                 ? "bg-red-900/30"
+                : booking.status === "COMPLETED"
+                ? "bg-cyan-900/30"
                 : "bg-amber-900/30"
             }`}
           >
@@ -197,17 +240,13 @@ export default function BookingDetails() {
                   ? "text-red-400"
                   : booking.status === "EXPIRED"
                   ? "text-red-400"
+                  : booking.status === "COMPLETED"
+                  ? "text-cyan-400"
                   : "text-amber-400"
               }`}
             >
-              {booking.status === "PAID"
-                ? "PAID"
-                : booking.status === "CANCELLED"
-                ? "CANCELLED"
-                : booking.status === "UNPAID"
+              {booking.status === "UNPAID"
                 ? "WAITING FOR PAYMENT"
-                : booking.status === "EXPIRED"
-                ? "EXPIRED"
                 : booking.status}
             </Text>
           </View>
@@ -375,8 +414,37 @@ export default function BookingDetails() {
               source={{ uri: booking.payment_link }}
               style={styles.webView}
               onNavigationStateChange={(navState) => {
-                // If redirected to success page or specific path, close webview
-                if (navState.url.includes("payment-success")) {
+                // Detect various success URLs or patterns
+                const successPatterns = [
+                  "payment-success",
+                  "payment/success",
+                  "payment_success",
+                  "status=success",
+                  "status=paid",
+                  "transaction_status=settlement",
+                  "transaction_status=capture",
+                  "callback_status=success",
+                  "payment_status=paid",
+                  "parkingo.agil.zip",
+                ];
+
+                // Check if the URL contains any success pattern
+                const isSuccessUrl = successPatterns.some((pattern) =>
+                  navState.url.toLowerCase().includes(pattern)
+                );
+
+                // Close WebView if redirected to success URL
+                if (isSuccessUrl) {
+                  console.log("Payment success detected, closing WebView");
+                  closeWebView();
+                }
+
+                // Also close if redirected back to the app domain (common pattern)
+                if (
+                  navState.url.includes("parkingo") &&
+                  navState.url !== booking.payment_link
+                ) {
+                  console.log("Redirected back to app domain, closing WebView");
                   closeWebView();
                 }
               }}
