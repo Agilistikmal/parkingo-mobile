@@ -7,12 +7,26 @@ import { API_BASE_URL, API_ENDPOINTS } from "../config/api";
 
 WebBrowser.maybeCompleteAuthSession();
 
+export interface User {
+  id: number;
+  username: string;
+  full_name: string;
+  email: string;
+  avatar_url: string;
+  google_id: string;
+  role: string;
+  created_at: string;
+  updated_at: string;
+}
+
 interface AuthContextType {
   isAuthenticated: boolean;
   signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   isLoading: boolean;
   token: string | null;
+  user: User | null;
+  setTokenAndAuthenticate: (token: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -32,7 +46,7 @@ function useProtectedRoute(isAuthenticated: boolean) {
     if (!isAuthenticated && !inAuthGroup) {
       router.replace("/(auth)/login");
     } else if (isAuthenticated && inAuthGroup) {
-      router.replace("/(protected)");
+      router.replace("/");
     }
   }, [isAuthenticated, segments]);
 }
@@ -41,6 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [token, setToken] = useState<string | null>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   // Load token on startup
   useEffect(() => {
@@ -54,6 +69,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       subscription.remove();
     };
   }, []);
+
+  // Fetch user data when token changes
+  useEffect(() => {
+    if (token) {
+      fetchUserData();
+    } else {
+      setUser(null);
+    }
+  }, [token]);
+
+  const fetchUserData = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/v1/users/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) {
+        console.log(response);
+        throw new Error("Failed to fetch user data");
+      }
+      const data = await response.json();
+      setUser(data.data);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+      // If we can't fetch user data, we should probably log out
+      logout();
+    }
+  };
 
   const loadToken = async () => {
     try {
@@ -79,7 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsAuthenticated(true);
 
         // Navigate to protected route - this will automatically close the browser
-        router.replace("/(protected)");
+        router.replace("/");
       }
     } catch (error) {
       console.error("Error handling deep link:", error);
@@ -131,9 +175,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const setTokenAndAuthenticate = (token: string) => {
+    setToken(token);
+    setIsAuthenticated(true);
+  };
+
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, signInWithGoogle, logout, isLoading, token }}
+      value={{
+        isAuthenticated,
+        signInWithGoogle,
+        logout,
+        isLoading,
+        token,
+        user,
+        setTokenAndAuthenticate,
+      }}
     >
       {children}
     </AuthContext.Provider>

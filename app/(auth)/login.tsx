@@ -1,21 +1,83 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import React from "react";
-import { ActivityIndicator, Text, TouchableOpacity, View } from "react-native";
+import * as Linking from "expo-linking";
+import { router } from "expo-router";
+import * as SecureStore from "expo-secure-store";
+import * as WebBrowser from "expo-web-browser";
+import React, { useState } from "react";
+import {
+  ActivityIndicator,
+  Alert,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { API_BASE_URL, API_ENDPOINTS } from "../../config/api";
 import { useAuth } from "../../context/auth";
+
+// Initialize WebBrowser for authentication
+WebBrowser.maybeCompleteAuthSession();
 
 const LOGO_URI = require("../../assets/images/logo.png");
 
 export default function Login() {
-  const { signInWithGoogle, isLoading } = useAuth();
+  const { isLoading, setTokenAndAuthenticate } = useAuth();
+  const [authLoading, setAuthLoading] = useState(false);
 
   const handleGoogleLogin = async () => {
     try {
-      await signInWithGoogle();
+      setAuthLoading(true);
+
+      // Get the authentication URL from API
+      const redirectUrl = encodeURIComponent(Linking.createURL("/"));
+      const response = await fetch(
+        `${API_BASE_URL}${API_ENDPOINTS.authenticate}?redirect_url=${redirectUrl}`
+      );
+
+      const data = await response.json();
+
+      if (!data.data?.url) {
+        throw new Error("Invalid authentication URL");
+      }
+
+      // Open authentication in browser
+      const result = await WebBrowser.openAuthSessionAsync(
+        data.data.url,
+        Linking.createURL("/")
+      );
+
+      if (result.type === "success" && result.url) {
+        try {
+          // Extract token from URL
+          const url = new URL(result.url);
+          const token = url.searchParams.get("token");
+
+          if (token) {
+            // Store token and authenticate user
+            await SecureStore.setItemAsync("auth_token", token);
+            setTokenAndAuthenticate(token);
+
+            // Navigate to home
+            router.replace("/");
+          }
+        } catch (error) {
+          console.error("Error extracting token:", error);
+          Alert.alert("Login Error", "Failed to process login response");
+        }
+      } else if (result.type === "cancel") {
+        console.log("Authentication cancelled");
+      } else {
+        Alert.alert("Login Error", "Authentication failed. Please try again.");
+      }
     } catch (error) {
-      console.error(error);
-      // Here you might want to show an error message to the user
+      console.error("Google login error:", error);
+      Alert.alert(
+        "Login Error",
+        "Could not connect to authentication service. Please try again later."
+      );
+    } finally {
+      setAuthLoading(false);
     }
   };
 
@@ -74,9 +136,9 @@ export default function Login() {
             style={{ elevation: 4 }}
             className="w-full h-12 bg-white rounded-3xl items-center justify-center flex-row mb-2"
             onPress={handleGoogleLogin}
-            disabled={isLoading}
+            disabled={isLoading || authLoading}
           >
-            {isLoading ? (
+            {isLoading || authLoading ? (
               <ActivityIndicator color="#181818" />
             ) : (
               <React.Fragment>
