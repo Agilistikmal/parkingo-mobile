@@ -114,13 +114,13 @@ export default function ParkingDetails() {
 
   // Booking form states
   const [plateNumber, setPlateNumber] = useState("");
-  const [entryDate, setEntryDate] = useState(() => {
+  const [entryTime, setEntryTime] = useState(() => {
     // Set default entry time to 30 minutes from now
     const date = new Date();
     date.setMinutes(date.getMinutes() + 30);
     return date;
   });
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [duration, setDuration] = useState("3");
   const [showForm, setShowForm] = useState(false);
 
@@ -184,8 +184,16 @@ export default function ParkingDetails() {
     try {
       setBookingLoading(true);
 
-      // Calculate end time based on duration
-      const startDate = new Date(entryDate);
+      // Create a date object with today's date but with the selected time
+      const today = new Date();
+      const startDate = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate(),
+        entryTime.getHours(),
+        entryTime.getMinutes()
+      );
+
       const endDate = new Date(startDate);
       endDate.setHours(endDate.getHours() + durationHours);
 
@@ -236,17 +244,33 @@ export default function ParkingDetails() {
     }
   };
 
-  const onChangeDatetime = (event: any, selectedDate?: Date) => {
-    setShowDatePicker(Platform.OS === "ios");
-    if (selectedDate) {
-      // Ensure selected date is in the future
+  const onChangeTime = (event: any, selectedTime?: Date) => {
+    setShowTimePicker(Platform.OS === "ios");
+    if (selectedTime) {
+      // Ensure selected time is in the future
       const now = new Date();
-      if (selectedDate <= now) {
+      const selectedDateWithToday = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        selectedTime.getHours(),
+        selectedTime.getMinutes()
+      );
+
+      if (selectedDateWithToday <= now) {
         Alert.alert("Invalid Time", "Start time must be in the future.");
         return;
       }
-      setEntryDate(selectedDate);
+      setEntryTime(selectedTime);
     }
+  };
+
+  const formatTimeString = (date: Date) => {
+    return date.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
   };
 
   return (
@@ -382,28 +406,29 @@ export default function ParkingDetails() {
 
                 <View className="mb-4">
                   <Text className="text-white font-jakarta-medium mb-2">
-                    Entry Time
+                    Entry Time (Today)
                   </Text>
                   <TouchableOpacity
                     className="bg-white/10 py-3 px-4 rounded-xl flex-row justify-between items-center"
-                    onPress={() => setShowDatePicker(true)}
+                    onPress={() => setShowTimePicker(true)}
                   >
                     <Text className="text-white font-jakarta-medium">
-                      {entryDate.toLocaleString()}
+                      {formatTimeString(entryTime)}
                     </Text>
                     <MaterialCommunityIcons
-                      name="calendar"
+                      name="clock-outline"
                       size={20}
                       color="#fff"
                     />
                   </TouchableOpacity>
 
-                  {showDatePicker && (
+                  {showTimePicker && (
                     <DateTimePicker
-                      value={entryDate}
-                      mode="datetime"
+                      value={entryTime}
+                      mode="time"
                       display="spinner"
-                      onChange={onChangeDatetime}
+                      onChange={onChangeTime}
+                      is24Hour={true}
                     />
                   )}
                 </View>

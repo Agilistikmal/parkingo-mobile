@@ -113,7 +113,7 @@ export interface Booking {
   payment_reference: string;
   payment_link: string;
   payment_expired_at: string;
-  status: "UNPAID" | "PAID" | "CANCELLED";
+  status: "UNPAID" | "PAID" | "CANCELLED" | "EXPIRED";
   created_at: string;
   updated_at: string;
   deleted_at: string | null;

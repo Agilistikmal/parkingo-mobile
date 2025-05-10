@@ -184,6 +184,8 @@ export default function BookingDetails() {
                 ? "bg-green-900/30"
                 : booking.status === "CANCELLED"
                 ? "bg-red-900/30"
+                : booking.status === "EXPIRED"
+                ? "bg-red-900/30"
                 : "bg-amber-900/30"
             }`}
           >
@@ -193,6 +195,8 @@ export default function BookingDetails() {
                   ? "text-green-400"
                   : booking.status === "CANCELLED"
                   ? "text-red-400"
+                  : booking.status === "EXPIRED"
+                  ? "text-red-400"
                   : "text-amber-400"
               }`}
             >
@@ -200,7 +204,11 @@ export default function BookingDetails() {
                 ? "PAID"
                 : booking.status === "CANCELLED"
                 ? "CANCELLED"
-                : "WAITING FOR PAYMENT"}
+                : booking.status === "UNPAID"
+                ? "WAITING FOR PAYMENT"
+                : booking.status === "EXPIRED"
+                ? "EXPIRED"
+                : booking.status}
             </Text>
           </View>
 
