@@ -15,6 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import QRCode from "react-native-qrcode-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
 import WebView from "react-native-webview";
 import { useAuth } from "../../../../context/auth";
@@ -291,6 +292,27 @@ export default function BookingDetails() {
               )}
             </View>
           )}
+
+          {/* QR Code */}
+          {booking.status == "PAID" ||
+            (booking.status == "COMPLETED" && (
+              <View className="bg-white/5 rounded-3xl p-5 mb-4 items-center">
+                <Text className="text-white font-jakarta-bold text-lg mb-3">
+                  Booking QR Code
+                </Text>
+                <View className="bg-white p-4 rounded-xl">
+                  <QRCode
+                    value={booking.payment_reference}
+                    size={200}
+                    backgroundColor="white"
+                    color="black"
+                  />
+                </View>
+                <Text className="text-gray-400 text-sm mt-3 text-center">
+                  Show this QR code when leaving the parking area
+                </Text>
+              </View>
+            ))}
 
           {/* Parking Info */}
           <View className="bg-white/5 rounded-3xl p-5 mb-4">
