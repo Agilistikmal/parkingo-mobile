@@ -40,12 +40,13 @@ export default function BookingDetails() {
     seconds: number;
   }>({ hours: 0, minutes: 0, seconds: 0 });
   const [isExpired, setIsExpired] = useState(false);
+  const [qrError, setQrError] = useState<Error | null>(null);
 
   useEffect(() => {
+    console.log("[DEBUG] Component mounted");
     fetchBookingDetails();
   }, [reference]);
 
-  // Countdown timer effect
   useEffect(() => {
     if (!booking || booking.status !== "UNPAID") return;
 
@@ -79,7 +80,10 @@ export default function BookingDetails() {
     // Update every second
     const interval = setInterval(updateCountdown, 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      console.log("[DEBUG] Component unmounted");
+    };
   }, [booking]);
 
   const fetchBookingDetails = async () => {
@@ -294,25 +298,32 @@ export default function BookingDetails() {
           )}
 
           {/* QR Code */}
-          {booking.status == "PAID" ||
-            (booking.status == "COMPLETED" && (
-              <View className="bg-white/5 rounded-3xl p-5 mb-4 items-center">
-                <Text className="text-white font-jakarta-bold text-lg mb-3">
-                  Booking QR Code
+          <View className="bg-white/5 rounded-3xl p-5 mb-4 items-center">
+            <Text className="text-white font-jakarta-bold text-lg mb-3">
+              Booking QR Code
+            </Text>
+            <View className="bg-white p-4 rounded-xl">
+              {qrError ? (
+                <Text className="text-red-500">
+                  Failed to load QR Code: {qrError.message}
                 </Text>
-                <View className="bg-white p-4 rounded-xl">
-                  <QRCode
-                    value={booking.payment_reference}
-                    size={200}
-                    backgroundColor="white"
-                    color="black"
-                  />
-                </View>
-                <Text className="text-gray-400 text-sm mt-3 text-center">
-                  Show this QR code when leaving the parking area
-                </Text>
-              </View>
-            ))}
+              ) : (
+                <QRCode
+                  value={booking?.payment_reference || ""}
+                  size={200}
+                  backgroundColor="white"
+                  color="black"
+                  onError={(error: Error) => {
+                    console.error("[QRCode Error]", error);
+                    setQrError(error);
+                  }}
+                />
+              )}
+            </View>
+            <Text className="text-gray-400 text-sm mt-3 text-center">
+              Show this QR code when leaving the parking area
+            </Text>
+          </View>
 
           {/* Parking Info */}
           <View className="bg-white/5 rounded-3xl p-5 mb-4">
