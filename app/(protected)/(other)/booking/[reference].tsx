@@ -19,11 +19,71 @@ import QRCode from "react-native-qrcode-svg";
 import { SafeAreaView } from "react-native-safe-area-context";
 import WebView from "react-native-webview";
 import { useAuth } from "../../../../context/auth";
-import { API_ENDPOINTS, Booking, getFullUrl } from "../../../../lib/api";
+import {
+  API_ENDPOINTS,
+  Booking,
+  getFullUrl,
+  LayoutItem,
+  ParkingSlot,
+} from "../../../../lib/api";
 import { COLORS } from "../../../../lib/constants";
 
 // Get screen dimensions
 const windowHeight = Dimensions.get("window").height;
+
+// Map status to colors
+const statusColors: Record<string, string> = {
+  DOOR: "#11CE73",
+  EXIT: "#FFBDBD",
+  IN: "#D1FFD4",
+  ROAD: "transparent",
+  EMPTY: "transparent",
+  P: "#3F3F3F",
+};
+
+// Component for each parking slot
+interface ParkingSlotProps {
+  item: LayoutItem;
+  slot: ParkingSlot | null;
+  bookedSlot: ParkingSlot | null;
+}
+
+const ParkingSlotComponent = ({ item, slot, bookedSlot }: ParkingSlotProps) => {
+  if (item === "EMPTY") {
+    return <View className="w-14 h-14 m-0.5" />;
+  }
+
+  if (item === "ROAD") {
+    return <View className="w-14 h-14 bg-white/5 m-0.5" />;
+  }
+
+  if (item === "DOOR" || item === "EXIT" || item === "IN") {
+    return (
+      <View
+        className="w-14 h-14 items-center justify-center rounded-md m-0.5"
+        style={{ backgroundColor: statusColors[item] }}
+      >
+        <Text className="text-black font-jakarta-bold">{item}</Text>
+      </View>
+    );
+  }
+
+  // For parking slots
+  const isBooked = bookedSlot && slot && bookedSlot.id === slot.id;
+
+  return (
+    <View
+      className="w-14 h-14 items-center justify-center m-0.5 rounded-md"
+      style={{ backgroundColor: isBooked ? "#A6A4F0" : "#3F3F3F" }}
+    >
+      {slot ? (
+        <Text className="text-white font-jakarta-bold">{slot.name}</Text>
+      ) : (
+        <Text className="text-white font-jakarta-medium">P</Text>
+      )}
+    </View>
+  );
+};
 
 export default function BookingDetails() {
   const router = useRouter();
@@ -88,7 +148,6 @@ export default function BookingDetails() {
 
   const fetchBookingDetails = async () => {
     if (!reference || !token) return;
-
     try {
       setLoading(true);
       const response = await fetch(
@@ -178,6 +237,17 @@ export default function BookingDetails() {
       // For iOS - we could use a custom alert here, but we'll keep it simple
       console.log(message);
     }
+  };
+
+  // Find slot by position in layout
+  const findSlot = (row: number, col: number): ParkingSlot | null => {
+    if (!booking?.parking?.slots) return null;
+
+    return (
+      booking?.parking.slots.find(
+        (slot) => slot.row === row && slot.col === col
+      ) || null
+    );
   };
 
   return (
@@ -409,6 +479,52 @@ export default function BookingDetails() {
                 {isExpired ? "Payment Expired" : "Pay Now"}
               </Text>
             </TouchableOpacity>
+          )}
+
+          {/* Booked Parking Layout Preview */}
+          {booking.parking?.layout && (
+            <View className="bg-white/5 rounded-3xl p-4 mb-4">
+              <Text className="text-white font-jakarta-bold text-lg mb-3">
+                Your Parking Layout
+              </Text>
+
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                className="mb-2"
+              >
+                <View className="items-center">
+                  {booking.parking.layout.map((row, rowIndex) => (
+                    <View key={`row-${rowIndex}`} className="flex-row">
+                      {row.map((item, colIndex) => (
+                        <ParkingSlotComponent
+                          key={`slot-${rowIndex}-${colIndex}`}
+                          item={item}
+                          slot={findSlot(rowIndex, colIndex)}
+                          bookedSlot={booking.slot || null}
+                        />
+                      ))}
+                    </View>
+                  ))}
+                </View>
+              </ScrollView>
+
+              {/* Legend */}
+              <View className="flex-row flex-wrap justify-center mt-4">
+                <View className="flex-row items-center mr-5 mb-2">
+                  <View className="w-4 h-4 bg-[#3F3F3F] rounded mr-2" />
+                  <Text className="text-gray-400 text-xs">Available</Text>
+                </View>
+                <View className="flex-row items-center mr-5 mb-2">
+                  <View className="w-4 h-4 bg-[#FFBF00] rounded mr-2" />
+                  <Text className="text-gray-400 text-xs">Your Slot</Text>
+                </View>
+                <View className="flex-row items-center mb-2">
+                  <View className="w-4 h-4 bg-[#FC4261] rounded mr-2" />
+                  <Text className="text-gray-400 text-xs">Not Available</Text>
+                </View>
+              </View>
+            </View>
           )}
         </ScrollView>
       ) : (

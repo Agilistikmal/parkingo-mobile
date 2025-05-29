@@ -91,20 +91,7 @@ export interface Booking {
     deleted_at: string | null;
   };
   slot_id: number;
-  slot?: {
-    id: number;
-    parking_id: number;
-    name: string;
-    status: string;
-    fee: number;
-    row: number;
-    col: number;
-    esp_hmac: string;
-    preview_url: string;
-    created_at: string;
-    updated_at: string;
-    deleted_at: string | null;
-  };
+  slot?: ParkingSlot;
   plate_number: string;
   start_at: string;
   end_at: string;
