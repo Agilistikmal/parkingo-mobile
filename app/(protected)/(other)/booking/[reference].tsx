@@ -24,6 +24,7 @@ import {
   Booking,
   getFullUrl,
   LayoutItem,
+  Parking,
   ParkingSlot,
 } from "../../../../lib/api";
 import { COLORS } from "../../../../lib/constants";
@@ -45,7 +46,7 @@ const statusColors: Record<string, string> = {
 interface ParkingSlotProps {
   item: LayoutItem;
   slot: ParkingSlot | null;
-  bookedSlot: ParkingSlot | null;
+  bookedSlot: ParkingSlot;
 }
 
 const ParkingSlotComponent = ({ item, slot, bookedSlot }: ParkingSlotProps) => {
@@ -69,7 +70,7 @@ const ParkingSlotComponent = ({ item, slot, bookedSlot }: ParkingSlotProps) => {
   }
 
   // For parking slots
-  const isBooked = bookedSlot && slot && bookedSlot.id === slot.id;
+  const isBooked = bookedSlot.id == slot?.id;
 
   return (
     <View
@@ -90,6 +91,7 @@ export default function BookingDetails() {
   const { reference } = useLocalSearchParams();
   const { token } = useAuth();
   const [booking, setBooking] = useState<Booking | null>(null);
+  const [parking, setParking] = useState<Parking | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showWebView, setShowWebView] = useState(false);
@@ -106,6 +108,14 @@ export default function BookingDetails() {
     console.log("[DEBUG] Component mounted");
     fetchBookingDetails();
   }, [reference]);
+
+  const findSlot = (row: number, col: number): ParkingSlot | null => {
+    if (!parking?.slots) return null;
+
+    return (
+      parking.slots.find((slot) => slot.row === row && slot.col === col) || null
+    );
+  };
 
   useEffect(() => {
     if (!booking || booking.status !== "UNPAID") return;
@@ -166,6 +176,10 @@ export default function BookingDetails() {
       const data = await response.json();
       setBooking(data.data);
 
+      if (!response.ok) {
+        throw new Error("Failed to fetch booking details");
+      }
+
       // Check if payment is already expired
       if (data.data.status === "UNPAID") {
         const expiryTime = new Date(data.data.payment_expired_at).getTime();
@@ -190,6 +204,30 @@ export default function BookingDetails() {
     setRefreshing(true);
     fetchBookingDetails();
   };
+
+  useEffect(() => {
+    const fetchParkingDetails = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(
+          getFullUrl(`${API_ENDPOINTS.PARKINGS}/slug/${booking?.parking?.slug}`)
+        );
+        if (!response.ok) {
+          throw new Error("Failed to fetch parking details");
+        }
+        const data = await response.json();
+        setParking(data.data);
+      } catch (error) {
+        console.error("Error fetching parking details:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (booking?.parking?.slug) {
+      fetchParkingDetails();
+    }
+  }, [booking]);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -237,17 +275,6 @@ export default function BookingDetails() {
       // For iOS - we could use a custom alert here, but we'll keep it simple
       console.log(message);
     }
-  };
-
-  // Find slot by position in layout
-  const findSlot = (row: number, col: number): ParkingSlot | null => {
-    if (!booking?.parking?.slots) return null;
-
-    return (
-      booking?.parking.slots.find(
-        (slot) => slot.row === row && slot.col === col
-      ) || null
-    );
   };
 
   return (
@@ -501,7 +528,7 @@ export default function BookingDetails() {
                           key={`slot-${rowIndex}-${colIndex}`}
                           item={item}
                           slot={findSlot(rowIndex, colIndex)}
-                          bookedSlot={booking.slot || null}
+                          bookedSlot={booking.slot!}
                         />
                       ))}
                     </View>
@@ -512,16 +539,8 @@ export default function BookingDetails() {
               {/* Legend */}
               <View className="flex-row flex-wrap justify-center mt-4">
                 <View className="flex-row items-center mr-5 mb-2">
-                  <View className="w-4 h-4 bg-[#3F3F3F] rounded mr-2" />
-                  <Text className="text-gray-400 text-xs">Available</Text>
-                </View>
-                <View className="flex-row items-center mr-5 mb-2">
-                  <View className="w-4 h-4 bg-[#FFBF00] rounded mr-2" />
-                  <Text className="text-gray-400 text-xs">Your Slot</Text>
-                </View>
-                <View className="flex-row items-center mb-2">
-                  <View className="w-4 h-4 bg-[#FC4261] rounded mr-2" />
-                  <Text className="text-gray-400 text-xs">Not Available</Text>
+                  <View className="w-4 h-4 bg-[#A6A4F0] rounded mr-2" />
+                  <Text className="text-gray-400 text-xs">Selected</Text>
                 </View>
               </View>
             </View>

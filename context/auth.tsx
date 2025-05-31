@@ -87,14 +87,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
       });
       if (!response.ok) {
-        console.log(response);
         throw new Error("Failed to fetch user data");
       }
       const data = await response.json();
       setUser(data.data);
     } catch (error) {
-      console.error("Error fetching user data:", error);
-      // If we can't fetch user data, we should probably log out
       logout();
     }
   };

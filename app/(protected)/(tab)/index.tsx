@@ -59,7 +59,7 @@ export default function ProtectedHome() {
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <SafeAreaView className="flex-1 bg-black">
-        <View className="flex-1 px-4">
+        <View className="px-4">
           {/* Header */}
           <View className="py-4">
             <Text className="text-white font-jakarta-bold text-2xl">
@@ -73,7 +73,7 @@ export default function ProtectedHome() {
             data={data?.data}
             keyExtractor={(item) => item.id.toString()}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingVertical: 12 }}
+            contentContainerStyle={{ paddingBottom: 48 }}
             renderItem={({ item }) => (
               <TouchableOpacity
                 className="bg-white/5 rounded-3xl p-5 mb-4 shadow-lg"
