@@ -309,6 +309,10 @@ export default function ParkingDetails() {
           {/* Content */}
           <ScrollView className="flex-1 px-4">
             <View className="bg-white/5 rounded-3xl p-5 mb-4">
+              {/* Google Maps */}
+            </View>
+
+            <View className="bg-white/5 rounded-3xl p-5 mb-4">
               <View className="flex-row mb-3">
                 <MaterialCommunityIcons
                   name="map-marker"

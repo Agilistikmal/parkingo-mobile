@@ -1,3 +1,4 @@
+import MapView from "@/components/ui/MapView";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -422,7 +423,7 @@ export default function BookingDetails() {
             </Text>
           </View>
 
-          {/* Parking Info */}
+          {/* Parking Info with Map */}
           <View className="bg-white/5 rounded-3xl p-5 mb-4">
             <Text className="text-white font-jakarta-bold text-lg mb-2">
               {booking.parking?.name}
@@ -438,6 +439,31 @@ export default function BookingDetails() {
                 {booking.parking?.address}
               </Text>
             </View>
+
+            {/* Google Maps Preview */}
+            {booking?.parking?.latitude && booking?.parking?.longitude && (
+              <TouchableOpacity
+                className="w-full h-40 rounded-xl overflow-hidden mb-3"
+                onPress={() => {}}
+              >
+                <MapView
+                  latitude={booking.parking.latitude}
+                  longitude={booking.parking.longitude}
+                />
+                <View className="absolute bottom-2 right-2">
+                  <View className="bg-black/70 px-3 py-1 rounded-full flex-row items-center">
+                    <MaterialCommunityIcons
+                      name="google-maps"
+                      size={16}
+                      color={COLORS.brand}
+                    />
+                    <Text className="text-white text-xs ml-1">
+                      Open in Maps
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            )}
 
             <Text className="text-gray-400 text-sm mb-2">
               Slot: <Text className="text-white">{booking.slot?.name}</Text>
