@@ -39,11 +39,7 @@
         "backgroundColor": "#000000",
         "barStyle": "light-content"
       },
-      "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyAJEfm1PtErALHZh6TjvZz4R_BK5iLVf3U"
-        }
-      },
+      "config": {},
       "permissions": [
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
@@ -54,16 +50,7 @@
       "output": "static",
       "favicon": "./assets/icons/adaptive-icon.png"
     },
-    "plugins": [
-      "expo-router",
-      [
-        "expo-maps",
-        {
-          "requestLocationPermission": true,
-          "locationPermission": "Allow $(PRODUCT_NAME) to use your location"
-        }
-      ]
-    ],
+    "plugins": ["expo-router"],
     "experiments": {
       "typedRoutes": true
     },
