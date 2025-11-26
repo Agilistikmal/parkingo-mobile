@@ -50,7 +50,15 @@
       "output": "static",
       "favicon": "./assets/icons/adaptive-icon.png"
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to access your location"
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true
     },

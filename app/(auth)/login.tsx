@@ -1,7 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as Linking from "expo-linking";
-import { router } from "expo-router";
 import * as SecureStore from "expo-secure-store";
 import * as WebBrowser from "expo-web-browser";
 import React, { useState } from "react";
@@ -56,10 +55,10 @@ export default function Login() {
           if (token) {
             // Store token and authenticate user
             await SecureStore.setItemAsync("auth_token", token);
-            setTokenAndAuthenticate(token);
+            await setTokenAndAuthenticate(token);
 
             // Navigate to home
-            router.replace("/");
+            // router.replace("/(protected)/(tab)");
           }
         } catch (error) {
           console.error("Error extracting token:", error);
@@ -157,7 +156,7 @@ export default function Login() {
 
           <View className="absolute bottom-5 left-0 right-0">
             <Text className="font-jakarta-semibold text-black text-xs text-center opacity-60">
-              Proyek Utama Informatika
+              Proyek Profesional
             </Text>
             <Text className="text-black text-xs text-center opacity-60">
               Agil Ghani Istikmal

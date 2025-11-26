@@ -26,7 +26,7 @@ interface AuthContextType {
   isLoading: boolean;
   token: string | null;
   user: User | null;
-  setTokenAndAuthenticate: (token: string) => void;
+  setTokenAndAuthenticate: (token: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -46,7 +46,7 @@ function useProtectedRoute(isAuthenticated: boolean) {
     if (!isAuthenticated && !inAuthGroup) {
       router.replace("/(auth)/login");
     } else if (isAuthenticated && inAuthGroup) {
-      router.replace("/");
+      router.replace("/(protected)/(tab)");
     }
   }, [isAuthenticated, segments]);
 }
@@ -70,14 +70,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Fetch user data when token changes
-  useEffect(() => {
-    if (token) {
-      fetchUserData();
-    } else {
-      setUser(null);
+  const logout = async () => {
+    try {
+      setIsLoading(true);
+      // Clear stored token
+      await SecureStore.deleteItemAsync("auth_token");
+      setToken(null);
+      setIsAuthenticated(false);
+    } catch (error) {
+      console.error("Logout Error:", error);
+    } finally {
+      setIsLoading(false);
     }
-  }, [token]);
+  };
 
   const fetchUserData = async () => {
     try {
@@ -95,6 +100,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       logout();
     }
   };
+
+  // Fetch user data when token changes
+  useEffect(() => {
+    if (token) {
+      fetchUserData();
+    } else {
+      setUser(null);
+    }
+  }, [token]);
 
   const loadToken = async () => {
     try {
@@ -120,7 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setIsAuthenticated(true);
 
         // Navigate to protected route - this will automatically close the browser
-        router.replace("/");
+        // router.replace("/(protected)/(tab)");
       }
     } catch (error) {
       console.error("Error handling deep link:", error);
@@ -158,21 +172,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const logout = async () => {
-    try {
-      setIsLoading(true);
-      // Clear stored token
-      await SecureStore.deleteItemAsync("auth_token");
-      setToken(null);
-      setIsAuthenticated(false);
-    } catch (error) {
-      console.error("Logout Error:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const setTokenAndAuthenticate = (token: string) => {
+  const setTokenAndAuthenticate = async (token: string) => {
     setToken(token);
     setIsAuthenticated(true);
   };
