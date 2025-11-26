@@ -126,9 +126,11 @@ export default function ParkingDetails() {
   const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
-    const fetchParkingDetails = async () => {
+    const fetchParkingDetails = async (isRefetch = false) => {
       try {
-        setLoading(true);
+        if (!isRefetch) {
+          setLoading(true);
+        }
         const response = await fetch(
           getFullUrl(`${API_ENDPOINTS.PARKINGS}/slug/${slug}`)
         );
@@ -143,8 +145,12 @@ export default function ParkingDetails() {
         setLoading(false);
       }
     };
-
     fetchParkingDetails();
+
+    const interval = setInterval(() => {
+      fetchParkingDetails(true);
+    }, 5000);
+    return () => clearInterval(interval);
   }, [slug]);
 
   const handleSlotSelect = (slot: ParkingSlot) => {
